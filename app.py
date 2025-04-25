@@ -2,9 +2,26 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Load data
+# Loading data
 df = pd.read_csv('cleaned_vehicles_us.csv')
+
+# Converting 'cylinders' column to numeric, coercing errors 
+df['cylinders'] = pd.to_numeric(df['cylinders'], errors='coerce')
+
+# Applying the fillna with the median per 'model' group
+df['cylinders'] = df.groupby('model')['cylinders'].transform(lambda x: x.fillna(x.median()))
+
+# Filling missing values in 'model_year' and 'odometer' columns 
+df['model_year'] = df.groupby('model')['model_year'].transform(lambda x: x.fillna(x.median()))
+df['odometer'] = df.groupby(['model', 'model_year'])['odometer'].transform(lambda x: x.fillna(x.median()))
+
+# Strip extra spaces from column names
 df.columns = df.columns.str.strip()
+
+
+df = df[(df['model_year'] >= 1990) & (df['model_year'] <= 2025)]
+df = df[(df['price'] > 100) & (df['price'] < 100000)]
+
 df = df.dropna(subset=['price', 'odometer', 'model'])
 
 # Sidebar filters
